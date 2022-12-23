@@ -1,10 +1,12 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from sqlalchemy.orm import Session
 import asyncio
 
-from db import models, crud, schemas, Period
+from db import models, crud, schemas
+from util import Period
 from db.database import SessionLocal, engine
 from sensor import check_data, SensorOutput
+from plot import get_image_bytes
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -73,6 +75,20 @@ def read_alerts(db: Session = Depends(get_db)):
 def read_sensor_data_history(period: Period, db: Session = Depends(get_db)):
     sensor_data = crud.get_sensor_data(db, period=period)
     return sensor_data
+
+
+@app.get(
+    "/history/image",
+    responses={
+        200: {
+            "content": {"image/png": {}}
+        }
+    },
+    response_class=Response,
+)
+def get_sensor_data_history_plot(period: Period):
+    image_bytes = get_image_bytes(period=period)
+    return Response(content=image_bytes, media_type="image/png")
 
 
 @app.get("/current/", response_model=SensorOutput)
