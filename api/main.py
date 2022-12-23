@@ -2,9 +2,8 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 import asyncio
 
-from . import crud, models, schemas
-from .database import SessionLocal, engine
-from .period import Period
+from db import models, crud, schemas, Period
+from db.database import SessionLocal, engine
 from sensor import check_data
 
 models.Base.metadata.create_all(bind=engine)

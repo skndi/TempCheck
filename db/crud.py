@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
 import datetime
 
-from . import models, schemas
-from .period import Period
+from db import models, schemas, Period
 
 
 def get_user(db: Session, user_id: int):
