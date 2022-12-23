@@ -4,7 +4,7 @@ import asyncio
 
 from db import models, crud, schemas, Period
 from db.database import SessionLocal, engine
-from sensor import check_data
+from sensor import check_data, SensorOutput
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -13,8 +13,9 @@ app = FastAPI()
 
 async def save_sensor_data(db: Session):
     while True:
-        sensor_data = check_data()
-        sensor_data_create = schemas.SensorDataCreate(temperature=sensor_data[0], humidity=sensor_data[1])
+        sensor_output = check_data()
+        sensor_data_create = schemas.SensorDataCreate(temperature=sensor_output.temperature,
+                                                      humidity=sensor_output.humidity)
         crud.add_sensor_data(db=db, sensor_data=sensor_data_create)
         await asyncio.sleep(300)
 
@@ -72,3 +73,8 @@ def read_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 def read_sensor_data(period: Period, db: Session = Depends(get_db)):
     sensor_data = crud.get_sensor_data(db, period=period)
     return sensor_data
+
+
+@app.get("/current/", response_model=SensorOutput)
+def get_current_sensor_data():
+    return check_data()
