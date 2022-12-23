@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-import datetime
 
-from db import models, schemas, Period
+from db import models, schemas
+from util import Period, get_up_to_date
 
 
 def get_user(db: Session, user_id: int):
@@ -46,17 +46,5 @@ def add_sensor_data(db: Session, sensor_data: schemas.SensorDataCreate):
 
 
 def get_sensor_data(db: Session, period: Period):
-    current_time = datetime.datetime.utcnow()
-
-    if period == Period.DAY:
-        up_to = current_time - datetime.timedelta(days=1)
-    elif period == Period.WEEK:
-        up_to = current_time - datetime.timedelta(weeks=1)
-    elif period == Period.MONTH:
-        up_to = current_time - datetime.timedelta(days=30)
-    elif period == Period.YEAR:
-        up_to = current_time - datetime.timedelta(days=365)
-    else:
-        up_to = None
-
+    up_to = get_up_to_date(period)
     return db.query(models.SensorData).filter(models.SensorData.timestamp > up_to).all()
