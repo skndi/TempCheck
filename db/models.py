@@ -30,6 +30,6 @@ class SensorData(Base):
     __tablename__ = "sensor_data"
 
     id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    timestamp = Column(DateTime, server_default=func.now())
     temperature = Column(Float, index=True)
     humidity = Column(Float, index=True)
