@@ -43,8 +43,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/users/", response_model=list[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
+def read_users(db: Session = Depends(get_db)):
+    users = crud.get_users(db)
     return users
 
 
@@ -64,13 +64,13 @@ def create_alert_for_user(
 
 
 @app.get("/alerts/", response_model=list[schemas.Alert])
-def read_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    alerts = crud.get_alerts(db, skip=skip, limit=limit)
+def read_alerts(db: Session = Depends(get_db)):
+    alerts = crud.get_alerts(db)
     return alerts
 
 
-@app.get("/data/", response_model=list[schemas.SensorData])
-def read_sensor_data(period: Period, db: Session = Depends(get_db)):
+@app.get("/history/", response_model=list[schemas.SensorData])
+def read_sensor_data_history(period: Period, db: Session = Depends(get_db)):
     sensor_data = crud.get_sensor_data(db, period=period)
     return sensor_data
 
