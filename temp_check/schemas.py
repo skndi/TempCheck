@@ -35,15 +35,16 @@ class User(UserBase):
         orm_mode = True
 
 
-class TemperatureBase(BaseModel):
+class SensorDataBase(BaseModel):
     temperature: float
+    humidity: float
 
 
-class TemperatureCreate(TemperatureBase):
+class SensorDataCreate(SensorDataBase):
     pass
 
 
-class Temperature(TemperatureBase):
+class SensorData(SensorDataBase):
     timestamp: datetime
 
     class Config:

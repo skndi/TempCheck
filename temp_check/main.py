@@ -1,13 +1,23 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
+import asyncio
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .period import Period
+from sensor import check_data
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+async def save_sensor_data(db: Session):
+    while True:
+        sensor_data = check_data()
+        sensor_data_create = schemas.SensorDataCreate(temperature=sensor_data[0], humidity=sensor_data[1])
+        crud.add_sensor_data(db=db, sensor_data=sensor_data_create)
+        await asyncio.sleep(300)
 
 
 def get_db():
@@ -16,6 +26,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.on_event('startup')
+async def app_startup():
+    db = next(get_db())
+    asyncio.create_task(save_sensor_data(db=db))
 
 
 @app.post("/users/", response_model=schemas.User)
@@ -53,14 +69,7 @@ def read_alerts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return alerts
 
 
-@app.post("/temperatures/", response_model=schemas.Temperature)
-def add_temperature(
-        temperature: schemas.TemperatureCreate, db: Session = Depends(get_db)
-):
-    return crud.add_temperature(db=db, temperature=temperature)
-
-
-@app.get("/temperatures/", response_model=list[schemas.Temperature])
-def get_temperatures(period: Period, db: Session = Depends(get_db)):
-    temperatures = crud.get_temperatures(db, period=period)
-    return temperatures
+@app.get("/data/", response_model=list[schemas.SensorData])
+def read_sensor_data(period: Period, db: Session = Depends(get_db)):
+    sensor_data = crud.get_sensor_data(db, period=period)
+    return sensor_data

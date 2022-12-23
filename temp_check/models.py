@@ -26,9 +26,10 @@ class Alert(Base):
     owner = relationship("User", back_populates="alerts")
 
 
-class Temperature(Base):
-    __tablename__ = "temperatures"
+class SensorData(Base):
+    __tablename__ = "sensor_data"
 
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     temperature = Column(Float, index=True)
+    humidity = Column(Float, index=True)

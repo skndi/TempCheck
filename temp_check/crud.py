@@ -38,15 +38,15 @@ def create_user_alert(db: Session, alert: schemas.AlertCreate, user_id: int):
     return db_alert
 
 
-def add_temperature(db: Session, temperature: schemas.TemperatureCreate):
-    db_temperature = models.Temperature(**temperature.dict())
-    db.add(db_temperature)
+def add_sensor_data(db: Session, sensor_data: schemas.SensorDataCreate):
+    db_sensor_data = models.SensorData(**sensor_data.dict())
+    db.add(db_sensor_data)
     db.commit()
-    db.refresh(db_temperature)
-    return db_temperature
+    db.refresh(db_sensor_data)
+    return db_sensor_data
 
 
-def get_temperatures(db: Session, period: Period):
+def get_sensor_data(db: Session, period: Period):
     current_time = datetime.datetime.utcnow()
 
     if period == Period.DAY:
@@ -57,5 +57,7 @@ def get_temperatures(db: Session, period: Period):
         up_to = current_time - datetime.timedelta(days=30)
     elif period == Period.YEAR:
         up_to = current_time - datetime.timedelta(days=365)
+    else:
+        up_to = None
 
-    return db.query(models.Temperature).filter(models.Temperature.timestamp > up_to).all()
+    return db.query(models.SensorData).filter(models.SensorData.timestamp > up_to).all()
