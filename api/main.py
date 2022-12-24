@@ -5,13 +5,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from db import models, crud
 from util import Period
-from db.database import engine
 from sensor import check_data, SensorOutput
 from plot import get_image_bytes
 from security import create_access_token
 from . import get_db, save_sensor_data, authenticate_user, get_current_user, schemas
-
-models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

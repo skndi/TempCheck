@@ -5,8 +5,11 @@ from db import crud
 from api import schemas
 import asyncio
 from jose import JWTError
-from security import oauth2_scheme, verify_password, get_username_from_token
+from security import verify_password, get_username_from_token
+from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 def get_db():
