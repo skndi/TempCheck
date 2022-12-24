@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Union
+from db.models import Direction
 
 
 class AlertBase(BaseModel):
     target: float
+    direction: Direction
 
 
 class AlertCreate(AlertBase):
@@ -13,9 +15,14 @@ class AlertCreate(AlertBase):
 
 class Alert(AlertBase):
     id: int
+    active: bool
 
     class Config:
         orm_mode = True
+
+
+class AlertChangeState(BaseModel):
+    active: bool
 
 
 class UserBase(BaseModel):

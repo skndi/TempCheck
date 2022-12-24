@@ -1,8 +1,14 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, Float, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from enum import Enum
 
 from db.database import Base
+
+
+class Direction(str, Enum):
+    OVER = "OVER"
+    UNDER = "UNDER"
 
 
 class User(Base):
@@ -20,6 +26,8 @@ class Alert(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     target = Column(Float, index=True)
+    direction = Column(String, index=True)
+    active = Column(Boolean, index=True, default=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="alerts")

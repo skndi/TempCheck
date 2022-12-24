@@ -4,6 +4,7 @@ import asyncio
 from fastapi.security import OAuth2PasswordRequestForm
 
 from db import models, crud
+from db.exceptions import AlertNotOwnedError
 from util import Period
 from sensor import check_data, SensorOutput
 from plot import get_image_bytes
@@ -39,6 +40,41 @@ def create_alert_for_current_user(
 @app.get("/alerts", response_model=list[schemas.Alert])
 def read_alerts_for_current_user(current_user: models.User = Depends(get_current_user)):
     return current_user.alerts
+
+
+@app.patch("/alerts/{alert_id}", response_model=schemas.Alert)
+def change_alert_state(
+        alert_id: int,
+        alert_change_state: schemas.AlertChangeState,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    try:
+        return crud.change_alert_state(
+            db=db,
+            alert_id=alert_id,
+            active=alert_change_state.active,
+            current_user_username=current_user.username
+        )
+    except AlertNotOwnedError:
+        raise HTTPException(status_code=403, detail="This alert is not owned by the current user")
+
+
+@app.delete("/alerts/{alert_id}")
+def delete_alert(
+        alert_id: int,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    try:
+        crud.delete_alert(
+            db=db,
+            alert_id=alert_id,
+            current_user_username=current_user.username
+        )
+    except AlertNotOwnedError:
+        raise HTTPException(status_code=403, detail="This alert is not owned by the current user")
+    return {"ok": True}
 
 
 @app.get("/history", response_model=list[schemas.SensorData])
