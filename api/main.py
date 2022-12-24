@@ -1,33 +1,19 @@
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 from sqlalchemy.orm import Session
 import asyncio
+from fastapi.security import OAuth2PasswordRequestForm
 
-from db import models, crud, schemas
+from db import models, crud
 from util import Period
-from db.database import SessionLocal, engine
+from db.database import engine
 from sensor import check_data, SensorOutput
 from plot import get_image_bytes
+from security import create_access_token
+from . import get_db, save_sensor_data, authenticate_user, get_current_user, schemas
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-
-async def save_sensor_data(db: Session):
-    while True:
-        sensor_output = check_data()
-        sensor_data_create = schemas.SensorDataCreate(temperature=sensor_output.temperature,
-                                                      humidity=sensor_output.humidity)
-        crud.add_sensor_data(db=db, sensor_data=sensor_data_create)
-        await asyncio.sleep(300)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @app.on_event('startup')
@@ -36,42 +22,29 @@ async def app_startup():
     asyncio.create_task(save_sensor_data(db=db))
 
 
-@app.post("/users/", response_model=schemas.User)
+@app.post("/register", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
+    db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Username already registered")
     return crud.create_user(db=db, user=user)
 
 
-@app.get("/users/", response_model=list[schemas.User])
-def read_users(db: Session = Depends(get_db)):
-    users = crud.get_users(db)
-    return users
-
-
-@app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-
-@app.post("/users/{user_id}/alerts/", response_model=schemas.Alert)
-def create_alert_for_user(
-        user_id: int, alert: schemas.AlertCreate, db: Session = Depends(get_db)
+@app.post("/alerts", response_model=schemas.Alert)
+def create_alert_for_current_user(
+        alert: schemas.AlertCreate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
-    return crud.create_user_alert(db=db, alert=alert, user_id=user_id)
+    return crud.create_alert_for_user(db=db, alert=alert, user_id=current_user.id)
 
 
-@app.get("/alerts/", response_model=list[schemas.Alert])
-def read_alerts(db: Session = Depends(get_db)):
-    alerts = crud.get_alerts(db)
-    return alerts
+@app.get("/alerts", response_model=list[schemas.Alert])
+def read_alerts_for_current_user(current_user: models.User = Depends(get_current_user)):
+    return current_user.alerts
 
 
-@app.get("/history/", response_model=list[schemas.SensorData])
+@app.get("/history", response_model=list[schemas.SensorData])
 def read_sensor_data_history(period: Period, db: Session = Depends(get_db)):
     sensor_data = crud.get_sensor_data(db, period=period)
     return sensor_data
@@ -94,3 +67,19 @@ def get_sensor_data_history_plot(period: Period):
 @app.get("/current/", response_model=SensorOutput)
 def get_current_sensor_data():
     return check_data()
+
+
+@app.post("/login", response_model=schemas.Token)
+def login(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: Session = Depends(get_db)
+):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(user.username)
+    return {"access_token": access_token, "token_type": "bearer"}
