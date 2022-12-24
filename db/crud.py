@@ -4,7 +4,7 @@ from db import models
 from api import schemas
 from util import Period, get_up_to_date
 from security import get_password_hash
-from .exceptions import AlertNotOwnedError
+from .exceptions import AlertNotOwnedError, AlertNotFoundError
 
 
 def get_user_by_username(db: Session, username: str):
@@ -32,6 +32,8 @@ def create_alert_for_user(db: Session, alert: schemas.AlertCreate, user_id: int)
 
 def change_alert_state(db: Session, alert_id: int, active: bool, current_user_username: str):
     alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
+    if alert is None:
+        raise AlertNotFoundError()
     if alert.owner.username != current_user_username:
         raise AlertNotOwnedError()
     alert.active = active
@@ -41,6 +43,8 @@ def change_alert_state(db: Session, alert_id: int, active: bool, current_user_us
 
 def delete_alert(db: Session, alert_id: int, current_user_username: str):
     alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
+    if alert is None:
+        raise AlertNotFoundError()
     if alert.owner.username != current_user_username:
         raise AlertNotOwnedError()
     db.delete(alert)

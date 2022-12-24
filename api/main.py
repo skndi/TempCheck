@@ -4,7 +4,7 @@ import asyncio
 from fastapi.security import OAuth2PasswordRequestForm
 
 from db import models, crud
-from db.exceptions import AlertNotOwnedError
+from db.exceptions import AlertNotOwnedError, AlertNotFoundError
 from util import Period
 from sensor import check_data, SensorOutput
 from plot import get_image_bytes
@@ -58,6 +58,8 @@ def change_alert_state(
         )
     except AlertNotOwnedError:
         raise HTTPException(status_code=403, detail="This alert is not owned by the current user")
+    except AlertNotFoundError:
+        raise HTTPException(status_code=404, detail="This alert doesn't exist")
 
 
 @app.delete("/alerts/{alert_id}")
@@ -74,6 +76,8 @@ def delete_alert(
         )
     except AlertNotOwnedError:
         raise HTTPException(status_code=403, detail="This alert is not owned by the current user")
+    except AlertNotFoundError:
+        raise HTTPException(status_code=404, detail="This alert doesn't exist")
     return {"ok": True}
 
 
