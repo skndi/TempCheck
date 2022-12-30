@@ -1,2 +1,4 @@
 /database.db
 /plot/database.db
+/db/tests/database.db
+/api/tests/database.db

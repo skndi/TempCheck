@@ -1,15 +1,14 @@
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from sqlalchemy.orm import Session
 import asyncio
 from fastapi.security import OAuth2PasswordRequestForm
 
-from db import models, crud
+from db import models, schemas, Database
 from db.exceptions import AlertNotOwnedError, AlertNotFoundError
 from util import Period
 from sensor import check_data, SensorOutput
 from plot import get_image_bytes
 from security import create_access_token
-from . import get_db, save_sensor_data, authenticate_user, get_current_user, schemas
+from api import get_db, save_sensor_data, authenticate_user, get_current_user
 
 app = FastAPI()
 
@@ -21,20 +20,20 @@ async def app_startup():
 
 
 @app.post("/register", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_username(db, username=user.username)
+def create_user(user: schemas.UserCreate, db: Database = Depends(get_db)):
+    db_user = db.get_user_by_username(username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    return crud.create_user(db=db, user=user)
+    return db.create_user(user=user)
 
 
 @app.post("/alerts", response_model=schemas.Alert)
 def create_alert_for_current_user(
         alert: schemas.AlertCreate,
-        db: Session = Depends(get_db),
+        db: Database = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
-    return crud.create_alert_for_user(db=db, alert=alert, user_id=current_user.id)
+    return db.create_alert_for_user(alert=alert, user_id=current_user.id)
 
 
 @app.get("/alerts", response_model=list[schemas.Alert])
@@ -46,12 +45,12 @@ def read_alerts_for_current_user(current_user: models.User = Depends(get_current
 def change_alert_state(
         alert_id: int,
         alert_change_state: schemas.AlertChangeState,
-        db: Session = Depends(get_db),
+        db: Database = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
     try:
-        return crud.change_alert_state(
-            db=db,
+        return db.change_alert_state(
+
             alert_id=alert_id,
             active=alert_change_state.active,
             current_user_username=current_user.username
@@ -65,12 +64,11 @@ def change_alert_state(
 @app.delete("/alerts/{alert_id}")
 def delete_alert(
         alert_id: int,
-        db: Session = Depends(get_db),
+        db: Database = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
     try:
-        crud.delete_alert(
-            db=db,
+        db.delete_alert(
             alert_id=alert_id,
             current_user_username=current_user.username
         )
@@ -82,8 +80,8 @@ def delete_alert(
 
 
 @app.get("/history", response_model=list[schemas.SensorData])
-def read_sensor_data_history(period: Period, db: Session = Depends(get_db)):
-    sensor_data = crud.get_sensor_data(db, period=period)
+def read_sensor_data_history(period: Period, db: Database = Depends(get_db)):
+    sensor_data = db.get_sensor_data(period=period)
     return sensor_data
 
 
@@ -109,7 +107,7 @@ def get_current_sensor_data():
 @app.post("/login", response_model=schemas.Token)
 def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
-        db: Session = Depends(get_db)
+        db: Database = Depends(get_db)
 ):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
