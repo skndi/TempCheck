@@ -13,6 +13,7 @@
   - uvicorn
   - kaleido
   - python-multipart
+  - firebase-admin
 
 #### Change sensor data retrieval
 To change the way data is retrieved from your sensor modify the `check_data` method in the `sensor` package
