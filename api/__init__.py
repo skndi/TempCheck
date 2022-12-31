@@ -3,18 +3,20 @@ from jose import JWTError
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sensor import check_data
-from db import schemas, Database
+from db import schemas, Database, SessionLocal
 from security import verify_password, get_username_from_token
+from notifications import send_notification
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 def get_db():
-    db = Database()
+    session = SessionLocal()
+    db = Database(session)
     try:
         yield db
     finally:
-        pass
+        session.close()
 
 
 async def save_sensor_data(db: Database):
@@ -23,6 +25,8 @@ async def save_sensor_data(db: Database):
         sensor_data_create = schemas.SensorDataCreate(temperature=sensor_output.temperature,
                                                       humidity=sensor_output.humidity)
         db.add_sensor_data(sensor_data=sensor_data_create)
+        for alert in db.get_alerts_to_trigger(sensor_output.temperature):
+            send_notification(alert.target, alert.direction, alert.owner.firebase_token)
         await asyncio.sleep(300)
 
 

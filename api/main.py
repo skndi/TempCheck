@@ -118,3 +118,13 @@ def login(
         )
     access_token = create_access_token(user.username)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/token")
+def login(
+        firebase_token: schemas.FirebaseToken,
+        db: Database = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    db.set_user_firebase_token(current_user.username, firebase_token.token)
+    return {"ok": True}

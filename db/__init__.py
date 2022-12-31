@@ -4,19 +4,22 @@ from db import models, schemas
 from util import Period, get_up_to_date
 from security import get_password_hash
 from .exceptions import AlertNotOwnedError, AlertNotFoundError
+from sqlalchemy import and_, or_
 
 models.Base.metadata.create_all(bind=engine)
 
 
 class Database:
-    def __init__(self, session=SessionLocal()):
+    def __init__(self, session):
         self._session = session
-
-    def __del__(self):
-        self._session.close()
 
     def get_user_by_username(self, username: str):
         return self._session.query(models.User).filter(models.User.username == username).first()
+
+    def set_user_firebase_token(self, username: str, firebase_token: str):
+        user = self._session.query(models.User).filter(models.User.username == username).first()
+        user.firebase_token = firebase_token
+        self._session.commit()
 
     def create_user(self, user: schemas.UserCreate):
         db_user = models.User(
@@ -64,3 +67,11 @@ class Database:
     def get_sensor_data(self, period: Period):
         up_to = get_up_to_date(period)
         return self._session.query(models.SensorData).filter(models.SensorData.timestamp > up_to).all()
+
+    def get_alerts_to_trigger(self, temperature: float):
+        return self._session.query(models.Alert).filter(
+            or_(
+                and_(models.Alert.target >= temperature, models.Alert.direction == models.Direction.OVER),
+                and_(models.Alert.target <= temperature, models.Alert.direction == models.Direction.UNDER)
+            )
+        ).all()

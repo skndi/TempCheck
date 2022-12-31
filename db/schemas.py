@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Union
 from db.models import Direction
 
 
@@ -59,3 +58,7 @@ class SensorData(SensorDataBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class FirebaseToken(BaseModel):
+    token: str

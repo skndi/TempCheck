@@ -16,6 +16,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    firebase_token = Column(String, unique=True, index=True)
     hashed_password = Column(String)
 
     alerts = relationship("Alert", back_populates="owner")
