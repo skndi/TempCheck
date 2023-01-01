@@ -26,10 +26,9 @@ async def save_sensor_data(db: Database):
                                                       humidity=sensor_output.humidity)
         db.add_sensor_data(sensor_data=sensor_data_create)
         for alert in db.get_alerts_to_trigger(sensor_output.temperature):
-            if alert.active:
-                print(f"Sent notification to {alert.owner.firebase_token}. {alert.target} {alert.target}")
-                send_notification(alert.target, alert.direction, alert.owner.firebase_token)
-                db.disable_alert(alert.id)
+            print(f"Sent notification to {alert.owner.firebase_token}, {alert.target} {alert.target}")
+            send_notification(alert.target, alert.direction, alert.owner.firebase_token)
+            db.disable_alert(alert.id)
         await asyncio.sleep(300)
 
 
