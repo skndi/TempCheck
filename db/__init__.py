@@ -79,7 +79,7 @@ class Database:
     def get_alerts_to_trigger(self, temperature: float):
         return self._session.query(models.Alert).filter(
             or_(
-                and_(models.Alert.target >= temperature, models.Alert.direction == models.Direction.OVER),
-                and_(models.Alert.target <= temperature, models.Alert.direction == models.Direction.UNDER)
+                and_(models.Alert.target <= temperature, models.Alert.direction == models.Direction.OVER),
+                and_(models.Alert.target >= temperature, models.Alert.direction == models.Direction.UNDER)
             )
         ).all()
