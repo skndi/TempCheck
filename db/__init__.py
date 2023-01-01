@@ -48,6 +48,14 @@ class Database:
         self._session.commit()
         return alert
 
+    def disable_alert(self, alert_id: int):
+        alert = self._session.query(models.Alert).filter(models.Alert.id == alert_id).first()
+        if alert is None:
+            raise AlertNotFoundError()
+        alert.active = False
+        self._session.commit()
+        return alert
+
     def delete_alert(self, alert_id: int, current_user_username: str):
         alert = self._session.query(models.Alert).filter(models.Alert.id == alert_id).first()
         if alert is None:
