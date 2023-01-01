@@ -1,8 +1,7 @@
-import firebase_admin
-from firebase_admin import credentials, messaging
+from firebase_admin import credentials, messaging, initialize_app
 
 firebase_cred = credentials.Certificate("notifications/firebase_credentials.json")
-firebase_app = firebase_admin.initialize_app(firebase_cred)
+firebase_app = initialize_app(firebase_cred)
 
 
 def send_notification(target: float, direction: str, token: str):
