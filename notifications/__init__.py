@@ -1,6 +1,8 @@
 from firebase_admin import credentials, messaging, initialize_app
+import os
 
-firebase_cred = credentials.Certificate("notifications/firebase_credentials.json")
+file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase_credentials.json")
+firebase_cred = credentials.Certificate(file_path)
 firebase_app = initialize_app(firebase_cred)
 
 

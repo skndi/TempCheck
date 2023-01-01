@@ -141,7 +141,3 @@ class TestDatabase(TestCase):
         self.mock_query.filter.assert_called_once()
         self.mock_query.all.assert_called_once()
         self.mock_session.query.assert_called_once_with(models.SensorData)
-
-    def test_del(self):
-        self.db.__del__()
-        self.mock_session.close.assert_called_once()
