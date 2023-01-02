@@ -6,6 +6,8 @@ from sensor import check_data
 from db import schemas, Database, SessionLocal
 from security import verify_password, get_username_from_token
 from notifications import send_notification
+import logging
+from firebase_admin.exceptions import FirebaseError
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -26,9 +28,13 @@ async def save_sensor_data(db: Database):
                                                       humidity=sensor_output.humidity)
         db.add_sensor_data(sensor_data=sensor_data_create)
         for alert in db.get_alerts_to_trigger(sensor_output.temperature):
-            print(f"Sent notification to {alert.owner.firebase_token}, {alert.target} {alert.target}")
-            send_notification(alert.target, alert.direction, alert.owner.firebase_token)
-            db.disable_alert(alert.id)
+            try:
+                send_notification(alert.target, alert.direction, alert.owner.firebase_token)
+                logging.log(msg=f"Sent notification to {alert.owner.firebase_token}, {alert.target} {alert.target}")
+                db.disable_alert(alert.id)
+            except (ValueError, FirebaseError):
+                logging.exception('')
+
         await asyncio.sleep(300)
 
 
