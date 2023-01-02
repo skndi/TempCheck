@@ -30,7 +30,8 @@ async def save_sensor_data(db: Database):
         for alert in db.get_alerts_to_trigger(sensor_output.temperature):
             try:
                 send_notification(alert.target, alert.direction, alert.owner.firebase_token)
-                logging.log(msg=f"Sent notification to {alert.owner.firebase_token}, {alert.target} {alert.target}")
+                logging.log(logging.INFO,
+                            msg=f"Sent notification to {alert.owner.firebase_token}, {alert.target} {alert.target}")
                 db.disable_alert(alert.id)
             except (ValueError, FirebaseError):
                 logging.exception('')
