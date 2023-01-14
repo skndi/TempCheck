@@ -1,8 +1,7 @@
-import random
 from pydantic import BaseModel
-
-
-# import Adafruit_DHT
+from .common import SENSOR_SOCKET_NAME
+import socket
+import json
 
 
 class SensorOutput(BaseModel):
@@ -11,6 +10,10 @@ class SensorOutput(BaseModel):
 
 
 def check_data():
-    # humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, 4)
-    temperature, humidity = random.Random().randint(0, 10000) / 100, random.Random().randint(5000, 10000) / 100
-    return SensorOutput(temperature=temperature, humidity=humidity)
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.connect(SENSOR_SOCKET_NAME)
+        data = sock.recv(255)
+        data = json.loads(data)
+        temperature = data[0]
+        humidity = data[1]
+        return SensorOutput(temperature=temperature, humidity=humidity)

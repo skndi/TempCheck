@@ -1,0 +1,1 @@
+SENSOR_SOCKET_NAME = "/tmp/temp_sensor_socket.sock"
